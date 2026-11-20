@@ -20,11 +20,13 @@ MountGear can still restore the gear it recorded before mounting on dismount.
 
 ## Install
 
-On the computer with WoW Forever installed, clone this repository as
-`CharacterGearPicker` next to `wow-forever-addon-development`, then run:
+On the computer with WoW Forever installed, run
+`Install-CharacterGearPicker.ps1` from this folder. By default it installs to
+`D:\World of Warcraft\_forever_\Interface\AddOns\CharacterGearPicker`.
+To use another AddOns folder:
 
 ```powershell
-.\wow-forever-addon-development\install.ps1 -AddonName CharacterGearPicker
+.\Install-CharacterGearPicker.ps1 -AddOnsPath 'X:\World of Warcraft\_forever_\Interface\AddOns'
 ```
 
 Alternatively, copy `CharacterGearPicker.toc` and `Core.lua` into an
