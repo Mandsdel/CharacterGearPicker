@@ -7,7 +7,8 @@ Hover over an equipment slot to show matching bag items beside it. Move onto
 the icons to see their normal item tooltips, and left-click an icon to equip
 it in the hovered slot. The flyout closes when you move away; use the mouse
 wheel if it has more items than fit. The normal equipment-slot tooltip remains
-available. Empty slots work too.
+available. Empty slots work too. The picker chooses a different side of the
+slot when there is not enough screen space on its preferred side.
 
 The picker matches item equipment types, including both ring and trinket slots,
 robes, weapons, shields and ranged items. The game still decides whether your

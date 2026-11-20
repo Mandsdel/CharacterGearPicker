@@ -4,6 +4,7 @@ local bagLink = container.GetContainerItemLink or GetContainerItemLink
 local bagInfo = container.GetContainerItemInfo or GetContainerItemInfo
 local pickupBag = container.PickupContainerItem or PickupContainerItem
 local itemInfo = (C_Item and C_Item.GetItemInfoInstant) or GetItemInfoInstant
+local requestItemInfo = (C_Item and C_Item.GetItemInfo) or GetItemInfo
 
 local slotDefinitions = {
     { "Head", 1, "left", { INVTYPE_HEAD = true } },
@@ -84,12 +85,13 @@ local function scheduleClose()
     closeGeneration = closeGeneration + 1
     local generation = closeGeneration
     C_Timer.After(0.5, function()
-        if generation ~= closeGeneration or not picker:IsShown() then return end
+        if generation ~= closeGeneration then return end
         if (activeSlot and activeSlot:IsVisible() and activeSlot:IsMouseOver())
-            or picker:IsMouseOver() then
+            or (picker:IsShown() and picker:IsMouseOver()) then
             return
         end
         picker:Hide()
+        activeSlot, activeDefinition = nil, nil
     end)
 end
 
@@ -156,6 +158,17 @@ local function equip(button)
     picker:Hide()
 end
 
+local function showItemTooltip(button)
+    if not button.choice then return end
+    GameTooltip:SetOwner(button, "ANCHOR_RIGHT")
+    if GameTooltip.SetBagItem then
+        GameTooltip:SetBagItem(button.choice.bag, button.choice.index)
+    else
+        GameTooltip:SetHyperlink(button.choice.link)
+    end
+    GameTooltip:Show()
+end
+
 local function makeButton()
     local button = CreateFrame("Button", nil, content)
     button:SetSize(36, 36)
@@ -167,14 +180,7 @@ local function makeButton()
     button:RegisterForClicks("LeftButtonUp")
     button:SetScript("OnEnter", function(self)
         closeGeneration = closeGeneration + 1
-        if not self.choice then return end
-        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-        if GameTooltip.SetBagItem then
-            GameTooltip:SetBagItem(self.choice.bag, self.choice.index)
-        else
-            GameTooltip:SetHyperlink(self.choice.link)
-        end
-        GameTooltip:Show()
+        showItemTooltip(self)
     end)
     button:SetScript("OnLeave", function(self)
         if GameTooltip:IsOwned(self) then GameTooltip:Hide() end
@@ -182,6 +188,63 @@ local function makeButton()
     end)
     button:SetScript("OnClick", equip)
     return button
+end
+
+local function positionPicker(width, height)
+    local slot, side = activeSlot, activeDefinition[3]
+    local left, right, top, bottom = slot:GetLeft(), slot:GetRight(), slot:GetTop(), slot:GetBottom()
+    local screenLeft, screenRight, screenTop, screenBottom =
+        UIParent:GetLeft(), UIParent:GetRight(), UIParent:GetTop(), UIParent:GetBottom()
+    local slotScale, uiScale, pickerScale = slot:GetEffectiveScale(), UIParent:GetEffectiveScale(),
+        picker:GetEffectiveScale()
+    if left and right and top and bottom and screenLeft and screenRight and screenTop and screenBottom
+        and slotScale and uiScale and pickerScale then
+        local space = {
+            left = left * slotScale - screenLeft * uiScale,
+            right = screenRight * uiScale - right * slotScale,
+            top = screenTop * uiScale - top * slotScale,
+            bottom = bottom * slotScale - screenBottom * uiScale,
+        }
+        local needed = {
+            left = (width + 2) * pickerScale, right = (width + 2) * pickerScale,
+            top = (height + 2) * pickerScale, bottom = (height + 2) * pickerScale,
+        }
+        local order = side == "left" and { "left", "right", "top", "bottom" }
+            or side == "right" and { "right", "left", "top", "bottom" }
+            or { "top", "bottom", "right", "left" }
+        local best, bestRatio = order[1], -1
+        for _, candidate in ipairs(order) do
+            local ratio = space[candidate] / needed[candidate]
+            if ratio >= 1 then
+                best = candidate
+                break
+            elseif ratio > bestRatio then
+                best, bestRatio = candidate, ratio
+            end
+        end
+        side = best
+    elseif side == "bottom" then
+        side = "top"
+    end
+
+    picker:ClearAllPoints()
+    if side == "left" then
+        picker:SetPoint("RIGHT", slot, "LEFT", -2, 0)
+    elseif side == "right" then
+        picker:SetPoint("LEFT", slot, "RIGHT", 2, 0)
+    elseif side == "bottom" then
+        picker:SetPoint("TOP", slot, "BOTTOM", 0, -2)
+    else
+        picker:SetPoint("BOTTOM", slot, "TOP", 0, 2)
+    end
+    if GameTooltip:IsOwned(slot) and (side == "left" or side == "right") then
+        GameTooltip:ClearAllPoints()
+        if side == "right" then
+            GameTooltip:SetPoint("BOTTOMRIGHT", slot, "BOTTOMLEFT", -8, 0)
+        else
+            GameTooltip:SetPoint("BOTTOMLEFT", slot, "BOTTOMRIGHT", 8, 0)
+        end
+    end
 end
 
 local function draw()
@@ -194,22 +257,29 @@ local function draw()
                 local _, _, _, location, icon = itemInfo(link)
                 if activeDefinition[4][location] then
                     choices[#choices + 1] = { bag = bag, index = index, link = link, icon = icon }
+                elseif not location and requestItemInfo then
+                    requestItemInfo(link)
                 end
             end
         end
     end
     if #choices == 0 then
+        local slot, definition = activeSlot, activeDefinition
         picker:Hide()
+        activeSlot, activeDefinition = slot, definition
         return
     end
 
     local shownColumns = math.min(columns, #choices)
     local rows = math.ceil(#choices / shownColumns)
     local visibleRows = math.min(maxRows, rows)
-    picker:SetSize(shownColumns * cellSize + 20, visibleRows * cellSize + 36)
+    local width, height = shownColumns * cellSize + 20, visibleRows * cellSize + 36
+    local offset = scroll:GetVerticalScroll()
+    picker:SetSize(width, height)
     scroll:SetSize(shownColumns * cellSize, visibleRows * cellSize)
     content:SetSize(shownColumns * cellSize, rows * cellSize)
-    scroll:SetVerticalScroll(0)
+    scroll:SetVerticalScroll(math.max(0, math.min(offset, (rows - visibleRows) * cellSize)))
+    positionPicker(width, height)
     hint:SetText(rows > maxRows and "Click to equip; scroll for more" or "Click to equip")
 
     for i, choice in ipairs(choices) do
@@ -218,14 +288,17 @@ local function draw()
             button = makeButton()
             buttons[i] = button
         end
+        local showingTooltip = GameTooltip:IsOwned(button)
         button.choice = choice
         button:ClearAllPoints()
         button:SetPoint("TOPLEFT", ((i - 1) % shownColumns) * cellSize,
             -math.floor((i - 1) / shownColumns) * cellSize)
         button.icon:SetTexture(choice.icon or "Interface\\Icons\\INV_Misc_QuestionMark")
         button:Show()
+        if showingTooltip then showItemTooltip(button) end
     end
     for i = #choices + 1, #buttons do
+        if GameTooltip:IsOwned(buttons[i]) then GameTooltip:Hide() end
         buttons[i].choice = nil
         buttons[i]:Hide()
     end
@@ -235,19 +308,8 @@ end
 local function open(slot, definition)
     closeGeneration = closeGeneration + 1
     activeSlot, activeDefinition = slot, definition
-    picker:ClearAllPoints()
-    if definition[3] == "left" then
-        picker:SetPoint("RIGHT", slot, "LEFT", -2, 0)
-    elseif definition[3] == "right" then
-        picker:SetPoint("LEFT", slot, "RIGHT", 2, 0)
-    else
-        picker:SetPoint("BOTTOM", slot, "TOP", 0, 2)
-    end
+    scroll:SetVerticalScroll(0)
     draw()
-    if picker:IsShown() and definition[3] == "right" and GameTooltip:IsOwned(slot) then
-        GameTooltip:ClearAllPoints()
-        GameTooltip:SetPoint("BOTTOMRIGHT", slot, "BOTTOMLEFT", -8, 0)
-    end
 end
 
 local hooked = {}
@@ -260,7 +322,10 @@ local function hookSlots()
             slot:HookScript("OnEnter", function(self) open(self, definition) end)
             slot:HookScript("OnLeave", scheduleClose)
             slot:HookScript("OnHide", function(self)
-                if activeSlot == self then picker:Hide() end
+                if activeSlot == self then
+                    picker:Hide()
+                    activeSlot, activeDefinition = nil, nil
+                end
             end)
         end
     end
@@ -278,7 +343,9 @@ events:SetScript("OnEvent", function(_, event)
         hookSlots()
     elseif event == "PLAYER_REGEN_DISABLED" then
         picker:Hide()
-    elseif picker:IsShown() then
+        activeSlot, activeDefinition = nil, nil
+    elseif activeSlot and activeSlot:IsVisible()
+        and (picker:IsShown() or activeSlot:IsMouseOver()) then
         draw()
     end
 end)
