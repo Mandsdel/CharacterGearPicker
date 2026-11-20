@@ -1,9 +1,15 @@
 local frames, timers, messages, created = {}, {}, {}, {}
 local function frame(name)
-    local object = { name = name, shown = true, scripts = {}, children = {} }
+    local object = { name = name, shown = true, scripts = {}, children = {}, textures = {} }
     function object:SetScript(event, handler) self.scripts[event] = handler end
     function object:HookScript(event, handler) self.scripts[event] = handler end
-    function object:CreateTexture() return frame() end
+    function object:CreateTexture(_, layer)
+        local texture = frame()
+        texture.layer = layer
+        self.textures[#self.textures + 1] = texture
+        return texture
+    end
+    function object:SetTexture(path) self.texture = path end
     function object:CreateFontString() return frame() end
     function object:SetScrollChild(child) self.scrollChild = child end
     function object:SetVerticalScroll(value) self.scroll = value end
@@ -86,6 +92,10 @@ local scroll = picker.children[1]
 local content = scroll.scrollChild
 assert(#content.children == 2)
 local first, second = content.children[1], content.children[2]
+assert(first.textures[1].layer == "ARTWORK" and first.textures[2].layer == "OVERLAY")
+assert(first.textures[2].texture == "Interface\\Buttons\\UI-Quickslot2")
+assert(first.textures[2].width == 52 and first.textures[2].height == 52)
+assert(first.textures[2].point[1] == "CENTER")
 assert(first.choice.link == "trinket-a" and second.choice.link == "trinket-b")
 first.scripts.OnClick(first)
 assert(equipped[14] == "trinket-a" and bags[1] == "old-trinket" and cursor == nil)
