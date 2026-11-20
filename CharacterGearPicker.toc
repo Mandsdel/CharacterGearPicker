@@ -1,0 +1,6 @@
+## Interface: 16001
+## Title: CharacterGearPicker
+## Notes: Pick replacement gear from your bags on the character panel.
+## Version: 0.1.0
+
+Core.lua

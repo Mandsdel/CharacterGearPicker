@@ -1,0 +1,46 @@
+# CharacterGearPicker
+
+A standalone World of Warcraft Forever add-on (interface `16001`) that adds
+bag-item choices to the character panel.
+
+Hover over an equipment slot to show matching bag items beside it. Move onto
+the icons to see their normal item tooltips, and left-click an icon to equip
+it in the hovered slot. The flyout closes when you move away; use the mouse
+wheel if it has more items than fit. The normal equipment-slot tooltip remains
+available. Empty slots work too.
+
+The picker matches item equipment types, including both ring and trinket slots,
+robes, weapons, shields and ranged items. The game still decides whether your
+character can equip an item, including class, skill, level, unique-equipped
+and weapon restrictions. Bag contents are shown individually, not bank items.
+Gear changes are blocked in combat and when the cursor is occupied.
+
+This add-on is independent of MountGear. If you change gear while mounted,
+MountGear can still restore the gear it recorded before mounting on dismount.
+
+## Install
+
+On the computer with WoW Forever installed, clone this repository as
+`CharacterGearPicker` next to `wow-forever-addon-development`, then run:
+
+```powershell
+.\wow-forever-addon-development\install.ps1 -AddonName CharacterGearPicker
+```
+
+Alternatively, copy `CharacterGearPicker.toc` and `Core.lua` into an
+`Interface\AddOns\CharacterGearPicker` folder. Enable the add-on at character
+select, or use `/reload` if already enabled.
+
+The game client is not available in the development environment. The character
+slot hooks, tooltip placement, equipment swaps and API compatibility require
+testing in WoW Forever.
+
+## Local checks
+
+The small mocked behavior check runs without the game:
+
+```powershell
+npx --yes --package=fengari-node-cli fengari tests\test.lua
+```
+
+It does not verify game-client behavior.
