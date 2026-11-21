@@ -19,6 +19,9 @@ The addon does not write to chat. Blocked actions and cursor problems use
 on-screen error notifications instead. Equipment acceptance is left to the
 game rather than inferred from an immediate inventory-link check.
 
+**Options > AddOns > CharacterGearPicker** describes how to use the picker.
+There are no configurable settings.
+
 This add-on is independent of MountGear. If you change gear while mounted,
 MountGear can still restore the gear it recorded before mounting on dismount.
 
@@ -33,7 +36,7 @@ To use another AddOns folder:
 .\Install-CharacterGearPicker.ps1 -AddOnsPath 'X:\World of Warcraft\_forever_\Interface\AddOns'
 ```
 
-Alternatively, copy `CharacterGearPicker.toc` and `Core.lua` into an
+Alternatively, copy `CharacterGearPicker.toc`, `Core.lua`, and `Options.lua` into an
 `Interface\AddOns\CharacterGearPicker` folder. Enable the add-on at character
 select, or use `/reload` if already enabled.
 
