@@ -79,7 +79,10 @@ function PickupInventoryItem(slot) cursor, equipped[slot] = equipped[slot], curs
 function GetInventoryItemLink(_, slot) return equipped[slot] end
 function CursorHasItem() return cursor ~= nil end
 function InCombatLockdown() return combat end
-function print(text) messages[#messages + 1] = text end
+function print() error("CharacterGearPicker must not write to chat") end
+UIErrorsFrame = {
+    AddMessage = function(_, text) messages[#messages + 1] = text end,
+}
 C_Timer = { After = function(_, callback) timers[#timers + 1] = callback end }
 
 assert(loadfile("Core.lua"))()
@@ -100,6 +103,15 @@ assert(first.choice.link == "trinket-a" and second.choice.link == "trinket-b")
 first.scripts.OnClick(first)
 assert(equipped[14] == "trinket-a" and bags[1] == "old-trinket" and cursor == nil)
 assert(not picker:IsShown())
+
+-- Inventory links can still show the previous item immediately after a successful swap.
+local inventoryLink = GetInventoryItemLink
+function GetInventoryItemLink() return "stale-item" end
+CharacterTrinket1Slot.scripts.OnEnter(CharacterTrinket1Slot)
+first.scripts.OnClick(first)
+assert(equipped[14] == "old-trinket" and cursor == nil)
+assert(#messages == 0)
+GetInventoryItemLink = inventoryLink
 
 -- A hidden flyout must reopen after uncached item data arrives while still hovered.
 bags = { "cold-trinket" }

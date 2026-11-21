@@ -15,6 +15,9 @@ robes, weapons, shields and ranged items. The game still decides whether your
 character can equip an item, including class, skill, level, unique-equipped
 and weapon restrictions. Bag contents are shown individually, not bank items.
 Gear changes are blocked in combat and when the cursor is occupied.
+The addon does not write to chat. Blocked actions and cursor problems use
+on-screen error notifications instead. Equipment acceptance is left to the
+game rather than inferred from an immediate inventory-link check.
 
 This add-on is independent of MountGear. If you change gear while mounted,
 MountGear can still restore the gear it recorded before mounting on dismount.

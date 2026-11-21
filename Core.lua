@@ -37,7 +37,7 @@ local slotDefinitions = {
 }
 
 local function message(text)
-    print("|cff80cfffCharacterGearPicker:|r " .. text)
+    UIErrorsFrame:AddMessage("CharacterGearPicker: " .. text, 1, 0.2, 0.2)
 end
 
 if not (bagSize and bagLink and pickupBag and itemInfo and PickupInventoryItem and GetInventoryItemLink
@@ -148,12 +148,9 @@ local function equip(button)
         return
     end
     PickupInventoryItem(slot)
-    local equipped = GetInventoryItemLink("player", slot) == choice.link
     if CursorHasItem() then pickupBag(choice.bag, choice.index) end
     if CursorHasItem() then
         message("An item remains on your cursor; place it in a bag.")
-    elseif not equipped then
-        message("Could not equip that item in this slot.")
     end
     picker:Hide()
 end
